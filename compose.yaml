@@ -4,8 +4,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    environment:
-      - PORT=8002
+    # environment:
+    #   - PORT=8002
     env_file:
       - .env
     ports:

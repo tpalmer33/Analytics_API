@@ -1,3 +1,4 @@
+import os
 from fastapi import APIRouter
 from .schemas import (
     EventSchema, 
@@ -7,11 +8,13 @@ from .schemas import (
 )
 
 router = APIRouter()
+from api.db.config import DATABASE_URL
 
 # GET /api/events/
 @router.get("/")
 def read_events() -> EventListSchema:
     # a bunch of items in a table
+    print(os.environ.get("DATABASE_URL"), DATABASE_URL)
     return EventListSchema(
         results=[EventSchema(id=1), EventSchema(id=2), EventSchema(id=3)], 
         count=3
