@@ -2,19 +2,20 @@ from datetime import datetime, timezone
 from typing import List, Optional
 import sqlmodel
 from sqlmodel import SQLModel, Field
+from timescaledb import TimescaleModel
+from timescaledb.utils import get_utc_now
 
-def get_utc_now():
-    return datetime.now(timezone.utc)
+# Tracking page visits at any given time
 
-class EventModel(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    page: Optional[str] = ""
+class EventModel(TimescaleModel, table=True):
+    # id: Optional[int] = Field(default=None, primary_key=True)
+    page: str = Field(index=True) # /about, /contact, /pricing
     description: Optional[str] = ""
-    created_at: datetime = Field(
-        default_factory=get_utc_now,
-        sa_type=sqlmodel.DateTime,
-        nullable=False
-    )
+    # created_at: datetime = Field(
+    #     default_factory=get_utc_now,
+    #     sa_type=sqlmodel.DateTime,
+    #     nullable=False
+    # )
     updated_at: datetime = Field(
         default_factory=get_utc_now,
         sa_type=sqlmodel.DateTime,
