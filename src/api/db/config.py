@@ -1,3 +1,4 @@
 from decouple import config as decouple_config
 
 DATABASE_URL: str = str(decouple_config("DATABASE_URL", default=""))
+DB_TIMEZONE: str = str(decouple_config("DB_TIMEZONE", default="UTC"))
