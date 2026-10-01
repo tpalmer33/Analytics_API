@@ -11,11 +11,6 @@ class EventModel(TimescaleModel, table=True):
     # id: Optional[int] = Field(default=None, primary_key=True)
     page: str = Field(index=True) # /about, /contact, /pricing
     description: Optional[str] = ""
-    # created_at: datetime = Field(
-    #     default_factory=get_utc_now,
-    #     sa_type=sqlmodel.DateTime,
-    #     nullable=False
-    # )
     updated_at: datetime = Field(
         default_factory=get_utc_now,
         sa_type=sqlmodel.DateTime,
@@ -35,6 +30,7 @@ class EventUpdateSchema(SQLModel):
     description: str
 
 
-class EventListSchema(SQLModel):
-    results: List[EventModel]
+class EventBucketSchema(SQLModel):
+    bucket: datetime
+    page: str
     count: int

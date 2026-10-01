@@ -1,30 +1,56 @@
 import os
-from fastapi import APIRouter, Depends, HTTPException
+from typing import List
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, col, select
+from timescaledb.hyperfunctions import time_bucket
+from datetime import datetime, timedelta, timezone
+from sqlalchemy import func
 
 from api.db.session import get_session
+from api.db.config import DATABASE_URL
 
 from .models import (
     EventModel, 
-    EventListSchema, 
+    EventBucketSchema, 
     EventCreateSchema,
     EventUpdateSchema,
     get_utc_now
 )
 
 router = APIRouter()
-from api.db.config import DATABASE_URL
+
+DEFAULT_LOOKUP_PAGES = ['/about', '/contact', '/pages', 'pricing'] 
 
 # GET /api/events/
-@router.get("/", response_model=EventListSchema)
-def read_events(session: Session = Depends(get_session)):
-    # a bunch of items in a table
-    query = select(EventModel).order_by(col(EventModel.updated_at).desc()).limit(20)
-    results = session.exec(query).all()
-    return {
-        "results": results,
-        "count": len(results)
-    }
+@router.get("/", response_model=List[EventBucketSchema])
+def read_events(
+    duration: str = Query(default="1 day"),
+    pages: List = Query(default=None),
+    session: Session = Depends(get_session)
+    ):
+    bucket = time_bucket(duration, EventModel.time) # Buckets of data are chunked by a time range of 1 hour
+    lookup_pages = pages if isinstance(pages, list) and len(pages) > 0 else DEFAULT_LOOKUP_PAGES 
+
+    query = (
+        select(
+            bucket.label("bucket"), 
+            col(EventModel.page).label("page"),
+            func.count().label("count")
+        )
+        .where(
+            col(EventModel.page).in_(lookup_pages) # Filter by page
+        )
+        .group_by(
+            bucket,
+            EventModel.page
+        ) # Group
+        .order_by(
+            bucket,
+            EventModel.page
+        )
+    )
+    results = session.exec(query).fetchall()
+    return results
 
 # POST /api/events/
 @router.post("/", response_model=EventModel)
