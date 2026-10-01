@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, col, select
 from timescaledb.hyperfunctions import time_bucket
 from datetime import datetime, timedelta, timezone
-from sqlalchemy import func
+from sqlalchemy import func, case
 
 from api.db.session import get_session
 from api.db.config import DATABASE_URL
@@ -18,7 +18,11 @@ from .models import (
 
 router = APIRouter()
 
-DEFAULT_LOOKUP_PAGES = ['/about', '/contact', '/pages', 'pricing'] 
+DEFAULT_LOOKUP_PAGES = [
+    "/", "/about", "/pricing", "/contact",
+    "/blog", "/products", "/login", "/signup",
+    "/dashboard", "/settings"
+]
 
 # GET /api/events/
 @router.get("/", response_model=List[EventBucketSchema])
@@ -27,13 +31,25 @@ def read_events(
     pages: List = Query(default=None),
     session: Session = Depends(get_session)
     ):
+    os_case = case(
+        (col(EventModel.user_agent).ilike('%windows%'), 'Windows'),
+        (col(EventModel.user_agent).ilike('%macintosh%'), 'MacOS'),
+        (col(EventModel.user_agent).ilike('%iphone%'), 'iOS'),
+        (col(EventModel.user_agent).ilike('%android%'), 'Android'),
+        (col(EventModel.user_agent).ilike('%linux%'), 'Linux'),
+        else_='Other'
+    ).label('operating_system')
     bucket = time_bucket(duration, EventModel.time) # Buckets of data are chunked by a time range of 1 hour
     lookup_pages = pages if isinstance(pages, list) and len(pages) > 0 else DEFAULT_LOOKUP_PAGES 
 
     query = (
         select(
             bucket.label("bucket"), 
+            os_case,
             col(EventModel.page).label("page"),
+            func.avg(EventModel.duration).label('avg_duration'),
+        )
+        .add_columns(
             func.count().label("count")
         )
         .where(
@@ -41,14 +57,16 @@ def read_events(
         )
         .group_by(
             bucket,
+            os_case,
             EventModel.page
         ) # Group
         .order_by(
             bucket,
+            os_case,
             EventModel.page
         )
     )
-    results = session.exec(query).fetchall()
+    results = session.execute(query).fetchall()
     return results
 
 # POST /api/events/
