@@ -13,7 +13,6 @@ from .models import (
     EventModel, 
     EventBucketSchema, 
     EventCreateSchema,
-    EventUpdateSchema,
     get_utc_now
 )
 
@@ -76,36 +75,36 @@ def get_events(event_id:int, session: Session = Depends(get_session)):
         raise HTTPException(status_code=404, detail="Event not found")
     return result
 
-# PUT /api/events/{int}
-@router.put("/{event_id}", response_model=EventModel)
-def update_events(
-        event_id:int, 
-        payload:EventUpdateSchema,
-        session: Session = Depends(get_session)):
-    # a single row
-    query = select(EventModel).where(EventModel.id == event_id)
-    obj = session.exec(query).first()
-    if not obj:
-        raise HTTPException(status_code=404, detail="Event not found")
+# # PUT /api/events/{int}
+# @router.put("/{event_id}", response_model=EventModel)
+# def update_events(
+#         event_id:int, 
+#         payload:EventUpdateSchema,
+#         session: Session = Depends(get_session)):
+#     # a single row
+#     query = select(EventModel).where(EventModel.id == event_id)
+#     obj = session.exec(query).first()
+#     if not obj:
+#         raise HTTPException(status_code=404, detail="Event not found")
 
-    data = payload.model_dump()
-    for k, v in data.items():
-        setattr(obj, k, v)
+#     data = payload.model_dump()
+#     for k, v in data.items():
+#         setattr(obj, k, v)
 
-    obj.updated_at = get_utc_now()
+#     obj.updated_at = get_utc_now()
 
-    session.add(obj)
-    session.commit()
-    session.refresh(obj)
-    return obj
+#     session.add(obj)
+#     session.commit()
+#     session.refresh(obj)
+#     return obj
 
-@router.delete("/{event_id}")
-def delete_event(event_id: int, session: Session = Depends(get_session)) -> str:
-    query = select(EventModel).where(EventModel.id == event_id)
-    obj = session.exec(query).first()
-    if not obj: 
-        raise HTTPException(status_code=404, detail="Event not found")
+# @router.delete("/{event_id}")
+# def delete_event(event_id: int, session: Session = Depends(get_session)) -> str:
+#     query = select(EventModel).where(EventModel.id == event_id)
+#     obj = session.exec(query).first()
+#     if not obj: 
+#         raise HTTPException(status_code=404, detail="Event not found")
 
-    session.delete(obj)
-    session.commit()
-    return "Event deleted"
+#     session.delete(obj)
+#     session.commit()
+#     return "Event deleted"
