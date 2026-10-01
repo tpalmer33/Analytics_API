@@ -13,7 +13,7 @@ class EventModel(TimescaleModel, table=True):
     ip_address: Optional[str] = Field(default="", index=True)
     referrer: Optional[str] = Field(default="", index=True)
     session_id: Optional[str] = Field(index=True)
-    duration: Optional[str] = Field(default=0)
+    duration: Optional[int] = Field(default=0)
     
     __chunk_time_interval__ = "INTERVAL 1 day"
     __drop_after__ = "INTERVAL 3 months"
@@ -26,7 +26,7 @@ class EventCreateSchema(SQLModel):
     ip_address: Optional[str] = Field(default="", index=True)
     referrer: Optional[str] = Field(default="", index=True)
     session_id: Optional[str] = Field(index=True)
-    duration: Optional[str] = Field(default=0)
+    duration: Optional[int] = Field(default=0)
 
 class EventBucketSchema(SQLModel):
     bucket: datetime
